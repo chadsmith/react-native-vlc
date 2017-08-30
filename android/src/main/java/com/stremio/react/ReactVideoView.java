@@ -152,7 +152,7 @@ public class ReactVideoView extends SurfaceView implements IVLCVout.Callback, Me
             public Void call() throws Exception {
                 mMediaPlayer.stop();
                 final IVLCVout vout = mMediaPlayer.getVLCVout();
-                vout.removeCallback(this);
+                vout.removeCallback(ReactVideoView.this);
                 vout.detachViews();
                 libvlc.release();
                 libvlc = null;
