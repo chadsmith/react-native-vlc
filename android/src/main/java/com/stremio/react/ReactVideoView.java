@@ -27,6 +27,9 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
+
+import bolts.Task;
 
 import static android.view.KeyEvent.ACTION_DOWN;
 import static android.view.KeyEvent.KEYCODE_DPAD_CENTER;
@@ -143,12 +146,20 @@ public class ReactVideoView extends SurfaceView implements IVLCVout.Callback, Me
 
     private void releasePlayer() {
         if (libvlc == null) return;
-        mMediaPlayer.stop();
-        final IVLCVout vout = mMediaPlayer.getVLCVout();
-        vout.removeCallback(this);
-        vout.detachViews();
-        libvlc.release();
-        libvlc = null;
+        Task.callInBackground(new Callable<Void>() {
+
+            @Override
+            public Void call() throws Exception {
+                mMediaPlayer.stop();
+                final IVLCVout vout = mMediaPlayer.getVLCVout();
+                vout.removeCallback(ReactVideoView.this);
+                vout.detachViews();
+                libvlc.release();
+                libvlc = null;
+                return null;
+            }
+
+        });
     }
 
     private void setLayout() {
