@@ -1,6 +1,5 @@
 package com.stremio.react;
 
-import android.app.Activity;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
 import com.facebook.react.bridge.NativeModule;
@@ -18,7 +17,6 @@ public class ReactVLCPackage implements ReactPackage {
         return Collections.emptyList();
     }
 
-    @Override
     public List<Class<? extends JavaScriptModule>> createJSModules() {
         return Collections.emptyList();
     }
@@ -27,4 +25,5 @@ public class ReactVLCPackage implements ReactPackage {
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
         return Arrays.<ViewManager>asList(new ReactVideoViewManager());
     }
+
 }

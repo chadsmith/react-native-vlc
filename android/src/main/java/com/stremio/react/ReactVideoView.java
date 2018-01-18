@@ -2,12 +2,8 @@ package com.stremio.react;
 
 import android.content.res.Configuration;
 import android.net.Uri;
-import android.os.Handler;
-import android.util.Log;
 
 import android.view.KeyEvent;
-import android.view.Surface;
-import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 
@@ -21,12 +17,8 @@ import org.videolan.libvlc.IVLCVout;
 import org.videolan.libvlc.LibVLC;
 import org.videolan.libvlc.Media;
 import org.videolan.libvlc.MediaPlayer;
-import org.videolan.libvlc.util.AndroidUtil;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 import bolts.Task;
@@ -40,7 +32,7 @@ import static android.view.KeyEvent.KEYCODE_SPACE;
 
 // This originally extended ScalableVideoView, which extends TextureView
 // Now we extend SurfaceView (https://github.com/crosswalk-project/crosswalk-website/wiki/Android-SurfaceView-vs-TextureView)
-public class ReactVideoView extends SurfaceView implements IVLCVout.Callback, MediaPlayer.EventListener, LifecycleEventListener, View.OnKeyListener {
+public class ReactVideoView extends SurfaceView implements IVLCVout.OnNewVideoLayoutListener, IVLCVout.Callback, MediaPlayer.EventListener, LifecycleEventListener, View.OnKeyListener {
 
     public enum Events {
         EVENT_LOAD_START("onVideoLoadStart"),
@@ -186,7 +178,7 @@ public class ReactVideoView extends SurfaceView implements IVLCVout.Callback, Me
     }
 
     @Override
-    public void onNewLayout(IVLCVout vout, int width, int height, int visibleWidth, int visibleHeight, int sarNum, int sarDen) {
+    public void onNewVideoLayout(IVLCVout vout, int width, int height, int visibleWidth, int visibleHeight, int sarNum, int sarDen) {
         if (width * height == 0) return;
 
         mVideoWidth = width;
@@ -269,16 +261,6 @@ public class ReactVideoView extends SurfaceView implements IVLCVout.Callback, Me
         mEventEmitter.receiveEvent(getId(), Events.EVENT_SEEK.toString(), event);
 
         mMediaPlayer.setTime(msec);
-    }
-
-    @Override
-    public void onHardwareAccelerationError(IVLCVout vout) {
-        // Handle errors with hardware acceleration
-        WritableMap error = Arguments.createMap();
-        error.putString(EVENT_PROP_WHAT, "Error with hardware acceleration");
-        WritableMap event = Arguments.createMap();
-        event.putMap(EVENT_PROP_ERROR, error);
-        mEventEmitter.receiveEvent(getId(), Events.EVENT_ERROR.toString(), event);
     }
 
     @Override

@@ -1,5 +1,6 @@
-import React, {Component, PropTypes} from 'react';
+import React, {Component} from 'react';
 import {StyleSheet, requireNativeComponent, NativeModules, View, PixelRatio} from 'react-native';
+import PropTypes from 'prop-types';
 import resolveAssetSource from 'react-native/Libraries/Image/resolveAssetSource';
 
 const pixelRatio = PixelRatio.get();

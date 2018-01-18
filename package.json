@@ -37,7 +37,9 @@
     "eslint-plugin-react": "3.16.1",
     "eslint-config-airbnb": "4.0.0"
   },
-  "dependencies": {},
+  "dependencies": {
+    "prop-types": "^15.6.0"
+  },
   "scripts": {
     "test": "node_modules/.bin/eslint *.js"
   }
