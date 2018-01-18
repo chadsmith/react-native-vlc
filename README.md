@@ -12,26 +12,6 @@ Run `npm i -S react-native-vlc`
 
 #### Android
 
-First add the Jitpack source and the local source to your repositories
-
-```diff
-allprojects {
-    repositories {
-        mavenLocal()
-        jcenter()
-        flatDir{ 
-+           dirs 'libs', "$rootDir/../node_modules/react-native-vlc/android/libs"
-        }
-+       maven { url "https://jitpack.io" }
-        maven {
-            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-            url "$projectDir/../../node_modules/react-native/android"
-        }
-    }
-}
-```
-
-
 Then install [rnpm](https://github.com/rnpm/rnpm) and run `rnpm link react-native-vlc`
 
 Or if you have trouble using [rnpm](https://github.com/rnpm/rnpm), make the following additions to the given files manually:
@@ -57,7 +37,7 @@ dependencies {
 On top, where imports are:
 
 ```java
-import com.brentvatne.react.ReactVLCPackage;
+import com.stremio.react.ReactVLCPackage;
 ```
 
 Under `.addPackage(new MainReactPackage())`:
@@ -73,7 +53,7 @@ Under `.addPackage(new MainReactPackage())`:
 On top, where imports are:
 
 ```java
-import com.brentvatne.react.ReactVLCPackage;
+import com.stremio.react.ReactVLCPackage;
 ```
 
 Under `.addPackage(new MainReactPackage())`:
@@ -124,13 +104,6 @@ var styles = StyleSheet.create({
 Seeks the video to the specified time (in seconds). Access using a ref to the component
 
 ## Examples
-
-
-## Updating VLC SDK dependency
-
-You may want to update the VLC SDK from time to time. Currently we use 2.0.6.
-
-To update the dependency on VLC SDK (currently included from jitpack), you have to clone [vlc-android-sdk](https://github.com/mrmaffen/vlc-android-sdk) and follow [these instructions](https://github.com/mrmaffen/vlc-android-sdk#building-the-libvlc-android-sdk-yourself).
 
 ---
 
