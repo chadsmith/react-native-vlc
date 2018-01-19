@@ -1,20 +1,51 @@
 ## react-native-vlc
 
-A `<Video>` component for react-native that uses VLC. Aims for compatibility with (react-native-video)[https://github.com/react-native-community/react-native-video]
+A `<VLCPlayer>` component for react-native.
 
-Does not support iOS
+Adapted from the following libraries to support iOS and Android:
 
-Requires react-native >= 0.19.0
+- [react-native-video](https://github.com/react-native-community/react-native-video)
+- [react-native-vlc](https://github.com/Ivshti/react-native-vlc)
+- [react-native-vlcplayer](https://github.com/xiongchuan86/react-native-vlcplayer)
 
 ### Add it to your project
 
-Run `npm i -S react-native-vlc`
+Run `npm i -S git://github.com/chadsmith/react-native-vlc.git`
+
+Then run `react-native link react-native-vlc`
+
+Inside your code, import the player by adding:
+
+```javascript
+import VLCPlayer from 'react-native-vlc';
+```
+
+If necessary, make the following additions to the given files manually:
+
+#### iOS
+
+```bash
+sudo gem install cocoapods
+cd ios
+pod init
+open Podfile
+```
+
+Add this line
+
+```
+pod 'MobileVLCKit-unstable'
+```
+
+Then run
+
+```bash
+pod install
+```
+
+Then add `node_modules/react-native-vlc/ios/RCTVLCPlayer.xcodeproj` to your XCode project under the Libraries group.
 
 #### Android
-
-Then install [rnpm](https://github.com/rnpm/rnpm) and run `rnpm link react-native-vlc`
-
-Or if you have trouble using [rnpm](https://github.com/rnpm/rnpm), make the following additions to the given files manually:
 
 **android/settings.gradle**
 
@@ -32,34 +63,18 @@ dependencies {
 }
 ```
 
-**MainActivity.java**
+**MainApplication.java**
 
 On top, where imports are:
 
 ```java
-import com.stremio.react.ReactVLCPackage;
+import com.github.chadsmith.RCTVLCPlayer;
 ```
 
 Under `.addPackage(new MainReactPackage())`:
 
 ```java
-.addPackage(new ReactVLCPackage())
-```
-
-### Note: In react-native >= 0.29.0 you have to edit `MainApplication.java`
-
-**MainApplication.java** (react-native >= 0.29.0)
-
-On top, where imports are:
-
-```java
-import com.stremio.react.ReactVLCPackage;
-```
-
-Under `.addPackage(new MainReactPackage())`:
-
-```java
-.addPackage(new ReactVLCPackage())
+.addPackage(new VLCPlayerPackage())
 ```
 
 ## Usage
@@ -68,23 +83,17 @@ Under `.addPackage(new MainReactPackage())`:
 // Within your render function, assuming you have a file called
 // "background.mp4" in your project. You can include multiple videos
 // on a single screen if you like.
-<Video
+<VLCPlayer
   source={{uri: "background"}} // Can be a URL or a local file.
   rate={1.0}                   // 0 is paused, 1 is normal.
   volume={1.0}                 // 0 is muted, 1 is normal.
-  muted={false}                // Mutes the audio entirely.
   paused={false}               // Pauses playback entirely.
-  resizeMode="cover"           // Fill the whole screen at aspect ratio.
-  repeat={true}                // Repeat forever.
-  playInBackground={false}     // Audio continues to play when aentering background.
-  playWhenInactive={false}     // [iOS] Video continues to play whcontrol or notification center are shown.
   onLoadStart={this.loadStart} // Callback when video starts to load
   onLoad={this.setDuration}    // Callback when video loads
   onProgress={this.setTime}    // Callback every ~250ms with currentTime
   onEnd={this.onEnd}           // Callback when playback finishes
   onError={this.videoError}    // Callback when video cannot be loaded
-  style={styles.backgroundVideo}
-/>
+  style={styles.backgroundVideo} />
 
 // Later on in your styles..
 var styles = StyleSheet.create({
@@ -101,9 +110,7 @@ var styles = StyleSheet.create({
 
 `seek(seconds)`
 
-Seeks the video to the specified time (in seconds). Access using a ref to the component
-
-## Examples
+Seeks the video to the specified time (in seconds). Access using a ref to the component.
 
 ---
 

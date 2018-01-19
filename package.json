@@ -1,22 +1,31 @@
 {
   "name": "react-native-vlc",
-  "version": "1.0.1",
-  "description": "A <Video /> element for react-native for VLC",
-  "main": "Video.js",
+  "version": "1.0.0",
+  "description": "A <VLCPlayer /> element for react-native",
+  "main": "VLCPlayer.js",
   "license": "MIT",
-  "author": "Brent Vatne <brentvatne@gmail.com> (https://github.com/brentvatne)",
+  "author": "Chad Smith <chad@developer.email> (https://github.com/chadsmith)",
   "files": [
     "android/build.gradle",
-    "android/RCTVideo.iml",
+    "android/RCTVLCPlayer.iml",
     "android/src/main/AndroidManifest.xml",
     "android/src/main/res/values/styles.xml",
-    "android/src/main/java/com/stremio/react/ReactVLCPackage.java",
-    "android/src/main/java/com/stremio/react/ReactVideoViewManager.java",
-    "android/src/main/java/com/stremio/react/ReactVideoView.java",
+    "android/src/main/java/com/github/chadsmith/RCTVLCPlayer/VLCPlayerPackage.java",
+    "android/src/main/java/com/github/chadsmith/RCTVLCPlayer/RCTVLCPlayerManager.java",
+    "android/src/main/java/com/github/chadsmith/RCTVLCPlayer/RCTVLCPlayer.java",
+    "ios/RCTVLCPlayer.xcodeproj",
+    "ios/RCTVLCPlayer/RCTVLCPlayer.h",
+    "ios/RCTVLCPlayer/RCTVLCPlayer.m",
+    "ios/RCTVLCPlayer/RCTVLCPlayerManager.h",
+    "ios/RCTVLCPlayer/RCTVLCPlayerManager.m",
     "README.md",
-    "Video.js"
+    "VLCPlayer.js"
   ],
   "contributors": [
+    {
+      "name": "xiongchuan",
+      "email": "xiongchuan86@vip.qq.com"
+    },
     {
       "name": "Johannes Lumpe",
       "email": "johannes@lum.pe"
@@ -26,9 +35,10 @@
       "email": "baris.sncn@gmail.com"
     }
   ],
+  "homepage": "https://github.com/chadsmith/react-native-vlc",
   "repository": {
     "type": "git",
-    "url": "git@github.com:brentvatne/react-native-vlc.git"
+    "url": "git@github.com:chadsmith/react-native-vlc.git"
   },
   "devDependencies": {
     "jest-cli": "0.2.1",
