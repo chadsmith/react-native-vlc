@@ -204,7 +204,10 @@ public class ReactVideoView extends SurfaceView implements IVLCVout.OnNewVideoLa
 
     @Override
     public void onSurfacesCreated(IVLCVout vout) {
+        mVideoWidth = getWidth();
+        mVideoHeight = getHeight();
 
+        vout.setWindowSize(mVideoWidth, mVideoHeight);
     }
 
     @Override
