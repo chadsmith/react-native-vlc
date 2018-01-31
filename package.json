@@ -2,7 +2,8 @@
   "name": "react-native-vlc",
   "version": "1.0.0",
   "description": "A <VLCPlayer /> element for react-native",
-  "main": "VLCPlayer.js",
+  "main": "./VLCPlayer.js",
+  "module": "./VLCPlayer.js",
   "license": "MIT",
   "author": "Chad Smith <chad@developer.email> (https://github.com/chadsmith)",
   "files": [
