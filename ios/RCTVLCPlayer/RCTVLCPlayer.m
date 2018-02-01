@@ -165,8 +165,7 @@ static NSString *const playbackRate = @"rate";
     int currentTime   = [[_player time] intValue];
     int remainingTime = [[_player remainingTime] intValue];
     int duration      = [_player.media.length intValue];
-
-    if( currentTime >= 0 && currentTime < duration && self.onVideoProgress) {
+    if(currentTime >= 0 && (duration == 0 || currentTime < duration) && self.onVideoProgress) {
         self.onVideoProgress(@{
                                @"target": self.reactTag,
                                @"currentTime": [NSNumber numberWithInt:currentTime],
