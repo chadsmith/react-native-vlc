@@ -114,11 +114,13 @@ static NSString *const playbackRate = @"rate";
     switch (state) {
         case VLCMediaPlayerStateStopped:
             //NSLog(@"VLCMediaPlayerStateStopped %i",VLCMediaPlayerStateStopped);
+            /*
             if(self.onVideoEnd) {
                 self.onVideoEnd(@{
                     @"target": self.reactTag
                 });
             }
+            */
             break;
         case VLCMediaPlayerStateBuffering:
             if(self.onVideoBuffer) {
