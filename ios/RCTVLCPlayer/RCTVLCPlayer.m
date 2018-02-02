@@ -113,7 +113,7 @@ static NSString *const playbackRate = @"rate";
     VLCMediaPlayerState state = _player.state;
     switch (state) {
         case VLCMediaPlayerStateStopped:
-            //NSLog(@"VLCMediaPlayerStateStopped %i",VLCMediaPlayerStateStopped);
+            //NSLog(@"VLCMediaPlayerStateStopped");
             /*
             if(self.onVideoEnd) {
                 self.onVideoEnd(@{
@@ -122,42 +122,45 @@ static NSString *const playbackRate = @"rate";
             }
             */
             break;
+        case VLCMediaPlayerStateOpening:
+            //NSLog(@"VLCMediaPlayerStateOpening");
+            break;
         case VLCMediaPlayerStateBuffering:
-            if(self.onVideoBuffer) {
+            //NSLog(@"VLCMediaPlayerStateBuffering");
+            if(self.onVideoBuffer)
                 self.onVideoBuffer(@{
                     @"target": self.reactTag
                 });
-                break;
-            case VLCMediaPlayerStatePlaying:
-                _paused = NO;
-                //NSLog(@"VLCMediaPlayerStatePlaying %i",VLCMediaPlayerStatePlaying);
-                if(self.onVideoLoad) {
-                    self.onVideoLoad(@{
-                        @"target": self.reactTag,
-                        @"seekable": [NSNumber numberWithBool:[_player isSeekable]],
-                        @"duration":[NSNumber numberWithInt:[_player.media.length intValue]]
-                    });
-                }
-                break;
-            case VLCMediaPlayerStateEnded:
-                //NSLog(@"VLCMediaPlayerStateEnded %i",VLCMediaPlayerStateEnded);
-                if(self.onVideoEnd) {
-                    self.onVideoEnd(@{
-                        @"target": self.reactTag
-                    });
-                }
-                break;
-            case VLCMediaPlayerStateError:
-                //NSLog(@"VLCMediaPlayerStateError %i",VLCMediaPlayerStateError);
-                if(self.onVideoError) {
-                    self.onVideoError(@{ @"target": self.reactTag });
-                }
-                [self _release];
-                break;
-            default:
-                //NSLog(@"state %i",state);
-                break;
-            }
+            break;
+        case VLCMediaPlayerStatePlaying:
+            _paused = NO;
+            //NSLog(@"VLCMediaPlayerStatePlaying");
+            if(self.onVideoLoad)
+                self.onVideoLoad(@{
+                    @"target": self.reactTag,
+                    @"seekable": [NSNumber numberWithBool:[_player isSeekable]],
+                    @"duration":[NSNumber numberWithInt:[_player.media.length intValue]]
+                });
+            break;
+        case VLCMediaPlayerStateEnded:
+            //NSLog(@"VLCMediaPlayerStateEnded");
+            if(self.onVideoEnd)
+                self.onVideoEnd(@{
+                    @"target": self.reactTag
+                });
+            break;
+        case VLCMediaPlayerStateError:
+            //NSLog(@"VLCMediaPlayerStateError");
+            if(self.onVideoError)
+                self.onVideoError(@{ @"target": self.reactTag });
+            [self _release];
+            break;
+        case VLCMediaPlayerStatePaused:
+            //NSLog(@"VLCMediaPlayerStatePaused");
+            break;
+        default:
+            //NSLog(@"state %i",state);
+            break;
     }
 }
 
