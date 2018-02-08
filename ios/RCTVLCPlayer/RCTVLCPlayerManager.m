@@ -30,6 +30,8 @@ RCT_EXPORT_VIEW_PROPERTY(onVideoBuffer, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onVideoError, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onVideoProgress, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onVideoSeek, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onVideoPause, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onVideoStop, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onVideoEnd, RCTBubblingEventBlock);
 
 @end

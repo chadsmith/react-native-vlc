@@ -64,6 +64,18 @@ export default class VLCPlayer extends Component {
     }
   };
 
+  _onPause = (event) => {
+    if (this.props.onPause) {
+      this.props.onPause(event.nativeEvent);
+    }
+  };
+
+  _onStop = (event) => {
+    if (this.props.onStop) {
+      this.props.onStop(event.nativeEvent);
+    }
+  };
+
   _onEnd = (event) => {
     if (this.props.onEnd) {
       this.props.onEnd(event.nativeEvent);
@@ -77,6 +89,7 @@ export default class VLCPlayer extends Component {
   };
 
   render() {
+    const options = this.props.options || [];
     const source = resolveAssetSource(this.props.source) || {};
 
     let uri = source.uri || '';
@@ -89,12 +102,15 @@ export default class VLCPlayer extends Component {
       style: [ styles.base, nativeProps.style ],
       src: {
         uri,
+        options,
       },
       onVideoLoadStart: this._onLoadStart,
       onVideoLoad: this._onLoad,
       onVideoError: this._onError,
       onVideoProgress: this._onProgress,
       onVideoSeek: this._onSeek,
+      onVideoPause: this._onPause,
+      onVideoStop: this._onStop,
       onVideoEnd: this._onEnd,
       onVideoBuffer: this._onBuffer,
     });
@@ -118,9 +134,12 @@ VLCPlayer.propTypes = {
   onVideoError: PropTypes.func,
   onVideoProgress: PropTypes.func,
   onVideoSeek: PropTypes.func,
+  onVideoPause: PropTypes.func,
+  onVideoStop: PropTypes.func,
   onVideoEnd: PropTypes.func,
 
   /* Wrapper component */
+  options: PropTypes.array,
   source: PropTypes.oneOfType([
     PropTypes.shape({
       uri: PropTypes.string
@@ -137,6 +156,8 @@ VLCPlayer.propTypes = {
   onError: PropTypes.func,
   onProgress: PropTypes.func,
   onSeek: PropTypes.func,
+  onPause: PropTypes.func,
+  onStop: PropTypes.func,
   onEnd: PropTypes.func,
 
   /* Required by react-native */

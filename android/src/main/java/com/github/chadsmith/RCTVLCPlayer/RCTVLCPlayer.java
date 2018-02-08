@@ -2,10 +2,7 @@ package com.github.chadsmith.RCTVLCPlayer;
 
 import android.content.res.Configuration;
 import android.net.Uri;
-
-import android.view.KeyEvent;
 import android.view.SurfaceView;
-import android.view.View;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -30,11 +27,13 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     public enum Events {
         EVENT_LOAD_START("onVideoLoadStart"),
         EVENT_LOAD("onVideoLoad"),
+        EVENT_STALLED("onVideoBuffer"),
         EVENT_ERROR("onVideoError"),
         EVENT_PROGRESS("onVideoProgress"),
         EVENT_SEEK("onVideoSeek"),
-        EVENT_END("onVideoEnd"),
-        EVENT_STALLED("onVideoBuffer");
+        EVENT_PAUSE("onVideoPause"),
+        EVENT_STOP("onVideoStop"),
+        EVENT_END("onVideoEnd");
         private final String mName;
 
         Events(final String name) {
@@ -70,6 +69,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     private RCTEventEmitter mEventEmitter;
 
     private String mSrcUriString = null;
+    private ArrayList<Object> mSrcOptions = null;
     private boolean mPaused = false;
     private float mVolume = 1.0f;
     private boolean mLoaded = false;
@@ -92,22 +92,26 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         themedReactContext.addLifecycleEventListener(this);
         orientation = mThemedReactContext.getResources().getConfiguration().orientation;
 
-        createPlayer();
+        createPlayer(null);
     }
 
-    private void createPlayer() {
+    private void createPlayer(ArrayList<Object> options) {
         if (mMediaPlayer != null) return;
 
         try {
             // Create LibVLC
-            ArrayList<String> options = new ArrayList<String>();
-            //options.add("--subsdec-encoding <encoding>");
-            //options.add("--aout=opensles");
-            //options.add("--audio-time-stretch"); // time stretching
-            options.add("-vvv"); // verbosity
-            options.add("--http-reconnect");
-            //options.add("--network-caching="+(8*1000));
-            libvlc = new LibVLC(mThemedReactContext, options);
+            ArrayList<String> combinedOptions = new ArrayList<String>();
+            //combinedOptions.add("--subsdec-encoding <encoding>");
+            //combinedOptions.add("--aout=opensles");
+            //combinedOptions.add("--audio-time-stretch"); // time stretching
+            combinedOptions.add("-vvv"); // verbosity
+            combinedOptions.add("--http-reconnect");
+            //combinedOptions.add("--network-caching="+(8*1000));
+            if(options != null) {
+                for(Object option : options)
+                    combinedOptions.add(option.toString());
+            }
+            libvlc = new LibVLC(mThemedReactContext, combinedOptions);
             this.getHolder().setKeepScreenOn(true);
 
             // Create media player
@@ -177,11 +181,12 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
     }
 
-    public void setSrc(final String uriString) {
+    public void setSrc(final String uriString, final ArrayList<Object> options) {
 
         mSrcUriString = uriString;
+        mSrcOptions = options;
 
-        createPlayer();
+        createPlayer(options);
 
         Media m = new Media(libvlc, Uri.parse(uriString));
         mMediaPlayer.setMedia(m);
@@ -224,7 +229,6 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         event.putDouble(EVENT_PROP_CURRENT_TIME, mMediaPlayer.getTime() / 1000.0);
         event.putDouble(EVENT_PROP_SEEK_TIME, msec / 1000.0);
         mEventEmitter.receiveEvent(getId(), Events.EVENT_SEEK.toString(), event);
-
         mMediaPlayer.setTime(msec);
     }
 
@@ -257,18 +261,17 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
                 if (! mLoaded) {
                     event.putDouble(EVENT_PROP_DURATION, mMediaPlayer.getLength() / 1000.0);
                     event.putDouble(EVENT_PROP_CURRENT_TIME, mMediaPlayer.getTime() / 1000.0);
-
                     mEventEmitter.receiveEvent(getId(), Events.EVENT_LOAD.toString(), event);
-
                     mLoaded = true;
                 }
-
                 this.getHolder().setKeepScreenOn(true);
                 break;
             case MediaPlayer.Event.Paused:
+                mEventEmitter.receiveEvent(getId(), Events.EVENT_PAUSE.toString(), event);
                 this.getHolder().setKeepScreenOn(false);
                 break;
             case MediaPlayer.Event.Stopped:
+                mEventEmitter.receiveEvent(getId(), Events.EVENT_STOP.toString(), event);
                 this.getHolder().setKeepScreenOn(false);
                 break;
             case MediaPlayer.Event.Opening:
@@ -302,7 +305,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        setSrc(mSrcUriString);
+        setSrc(mSrcUriString, mSrcOptions);
     }
 
     @Override
