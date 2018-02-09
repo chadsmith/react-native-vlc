@@ -75,7 +75,7 @@ static NSString *const playbackRate = @"rate";
 
 -(void)play
 {
-    if(_player){
+    if(_player) {
         [_player play];
         _paused = NO;
         _started = YES;
@@ -84,22 +84,30 @@ static NSString *const playbackRate = @"rate";
 
 -(void)setSrc:(NSDictionary *)source
 {
-    if(_player){
-        [self _release];
+    if(!_player) {
+        NSArray* options = [source objectForKey:@"options"];
+        //init player && play
+        _player = [[VLCMediaPlayer alloc] initWithOptions:options];
+
+#if DEBUG
+        _player.libraryInstance.debugLogging = true;
+#endif
+
+        [_player setDrawable:self];
+        _player.delegate = self;
+
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mediaPlayerStateChanged:) name:VLCMediaPlayerStateChanged object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mediaPlayerTimeChanged:) name:VLCMediaPlayerTimeChanged object:nil];
     }
-    NSArray* options = [source objectForKey:@"options"];
+
     NSString* uri    = [source objectForKey:@"uri"];
-    NSURL* _uri    = [NSURL URLWithString:uri];
-
-    //init player && play
-    _player = [[VLCMediaPlayer alloc] initWithOptions:options];
-    [_player setDrawable:self];
-    _player.delegate = self;
-
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mediaPlayerStateChanged:) name:VLCMediaPlayerStateChanged object:nil];
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mediaPlayerTimeChanged:) name:VLCMediaPlayerTimeChanged object:nil];
-    _player.media = [VLCMedia mediaWithURL:_uri];
-    [self play];
+    if(uri) {
+        NSURL* _uri    = [NSURL URLWithString:uri];
+        _player.media = [VLCMedia mediaWithURL:_uri];
+        [self play];
+    }
+    else
+        [self _release];
 }
 
 - (void)mediaPlayerTimeChanged:(NSNotification *)aNotification
@@ -113,24 +121,20 @@ static NSString *const playbackRate = @"rate";
     switch (state) {
         case VLCMediaPlayerStateOpening:
             if(self.onVideoLoadStart)
-                self.onVideoLoadStart(@{
-                    @"target": self.reactTag
-                });
+                self.onVideoLoadStart(@{ @"target": self.reactTag });
             break;
         case VLCMediaPlayerStatePlaying:
             _paused = NO;
             if(self.onVideoLoad)
                 self.onVideoLoad(@{
-                    @"target": self.reactTag,
-                    @"seekable": [NSNumber numberWithBool:[_player isSeekable]],
-                    @"duration": [NSNumber numberWithInt:[_player.media.length intValue]]
-                });
+                                   @"target": self.reactTag,
+                                   @"seekable": [NSNumber numberWithBool:[_player isSeekable]],
+                                   @"duration": [NSNumber numberWithInt:[_player.media.length intValue]]
+                                   });
             break;
         case VLCMediaPlayerStateBuffering:
             if(self.onVideoBuffer)
-                self.onVideoBuffer(@{
-                    @"target": self.reactTag
-                });
+                self.onVideoBuffer(@{ @"target": self.reactTag });
             break;
         case VLCMediaPlayerStateError:
             if(self.onVideoError)
@@ -139,21 +143,15 @@ static NSString *const playbackRate = @"rate";
             break;
         case VLCMediaPlayerStatePaused:
             if(self.onVideoPause)
-                self.onVideoPause(@{
-                    @"target": self.reactTag
-                });
+                self.onVideoPause(@{ @"target": self.reactTag });
             break;
         case VLCMediaPlayerStateStopped:
             if(self.onVideoStop)
-                self.onVideoStop(@{
-                    @"target": self.reactTag
-                });
+                self.onVideoStop(@{ @"target": self.reactTag });
             break;
         case VLCMediaPlayerStateEnded:
             if(self.onVideoEnd)
-                self.onVideoEnd(@{
-                    @"target": self.reactTag
-                });
+                self.onVideoEnd(@{ @"target": self.reactTag });
             break;
         case VLCMediaPlayerStateESAdded:
             // NSLog(@"VLCMediaPlayerStateESAdded");
@@ -219,15 +217,15 @@ static NSString *const playbackRate = @"rate";
 {
     [_player pause];
     [_player stop];
-    _player = nil;
-    _eventDispatcher = nil;
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 #pragma mark - Lifecycle
 - (void)removeFromSuperview
 {
     [self _release];
+    _player = nil;
+    _eventDispatcher = nil;
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [super removeFromSuperview];
 }
 
