@@ -183,6 +183,9 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
     public void setSrc(final String uriString, final ArrayList<Object> options) {
 
+        if(uriString == null)
+            return;
+
         mSrcUriString = uriString;
         mSrcOptions = options;
 
