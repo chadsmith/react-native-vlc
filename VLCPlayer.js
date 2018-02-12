@@ -147,6 +147,7 @@ VLCPlayer.propTypes = {
     // Opaque type returned by require('./video.mp4')
     PropTypes.number
   ]),
+  muted: PropTypes.bool,
   paused: PropTypes.bool,
   volume: PropTypes.number,
   rate: PropTypes.number,

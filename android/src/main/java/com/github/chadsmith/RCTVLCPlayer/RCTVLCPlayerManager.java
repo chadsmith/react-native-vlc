@@ -19,6 +19,7 @@ public class RCTVLCPlayerManager extends SimpleViewManager<RCTVLCPlayer> {
     public static final String PROP_SRC_URI = "uri";
     public static final String PROP_SRC_IS_NETWORK = "isNetwork";
     public static final String PROP_SRC_IS_ASSET = "isAsset";
+    public static final String PROP_MUTED = "muted";
     public static final String PROP_PAUSED = "paused";
     public static final String PROP_VOLUME = "volume";
     public static final String PROP_SEEK = "seek";
@@ -46,6 +47,11 @@ public class RCTVLCPlayerManager extends SimpleViewManager<RCTVLCPlayer> {
     @ReactProp(name = PROP_SRC)
     public void setSrc(final RCTVLCPlayer videoView, @Nullable ReadableMap src) {
         videoView.setSrc(src.getString(PROP_SRC_URI), src.getArray(PROP_SRC_OPTIONS).toArrayList());
+    }
+
+    @ReactProp(name = PROP_MUTED, defaultBoolean = false)
+    public void setMuted(final RCTVLCPlayer videoView, final boolean muted) {
+        videoView.setMutedModifier(muted);
     }
 
     @ReactProp(name = PROP_PAUSED, defaultBoolean = false)

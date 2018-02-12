@@ -71,6 +71,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     private String mSrcUriString = null;
     private ArrayList<Object> mSrcOptions = null;
     private boolean mPaused = false;
+    private boolean mMuted = false;
     private float mVolume = 1.0f;
     private boolean mLoaded = false;
     private boolean mStalled = false;
@@ -218,6 +219,16 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         }
     }
 
+    public void setMutedModifier(final boolean muted) {
+        mMuted = muted;
+
+        if (mMuted) {
+            mMediaPlayer.setVolume(0);
+        } else {
+            mMediaPlayer.setVolume((int) mVolume * 200);
+        }
+    }
+
     public void setVolumeModifier(final float volume) {
         mVolume = volume;
         mMediaPlayer.setVolume((int) volume * 200);
@@ -225,6 +236,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
     public void applyModifiers() {
         setPausedModifier(mPaused);
+        setMutedModifier(mMuted);
     }
 
     public void seekTo(int msec) {
