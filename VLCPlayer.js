@@ -150,7 +150,6 @@ VLCPlayer.propTypes = {
   muted: PropTypes.bool,
   paused: PropTypes.bool,
   volume: PropTypes.number,
-  rate: PropTypes.number,
   onLoadStart: PropTypes.func,
   onLoad: PropTypes.func,
   onBuffer: PropTypes.func,

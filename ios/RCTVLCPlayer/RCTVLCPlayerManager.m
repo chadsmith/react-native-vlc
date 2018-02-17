@@ -10,7 +10,7 @@ RCT_EXPORT_MODULE();
 
 - (UIView *)view
 {
-  return [[RCTVLCPlayer alloc] initWithEventDispatcher:self.bridge.eventDispatcher];
+    return [[RCTVLCPlayer alloc] initWithEventDispatcher:self.bridge.eventDispatcher];
 }
 
 - (dispatch_queue_t)methodQueue
@@ -20,7 +20,7 @@ RCT_EXPORT_MODULE();
 
 RCT_EXPORT_VIEW_PROPERTY(src, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(paused, BOOL);
-RCT_EXPORT_VIEW_PROPERTY(rate, float);
+RCT_EXPORT_VIEW_PROPERTY(muted, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(seek, float);
 
 /* Should support: onLoadStart, onLoad, and onError to stay consistent with Image */

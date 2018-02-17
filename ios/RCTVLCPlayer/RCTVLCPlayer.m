@@ -5,22 +5,14 @@
 #import <React/UIView+React.h>
 #import <MobileVLCKit/MobileVLCKit.h>
 
-static NSString *const statusKeyPath = @"status";
-static NSString *const playbackLikelyToKeepUpKeyPath = @"playbackLikelyToKeepUp";
-static NSString *const playbackBufferEmptyKeyPath = @"playbackBufferEmpty";
-static NSString *const readyForDisplayKeyPath = @"readyForDisplay";
-static NSString *const playbackRate = @"rate";
-
 @implementation RCTVLCPlayer
 {
-
-    /* Required to publish events */
     RCTEventDispatcher *_eventDispatcher;
     VLCMediaPlayer *_player;
 
     BOOL _paused;
+    BOOL _muted;
     BOOL _started;
-
 }
 
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher
@@ -28,16 +20,36 @@ static NSString *const playbackRate = @"rate";
     if ((self = [super init])) {
         _eventDispatcher = eventDispatcher;
 
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(applicationWillResignActive:)
-                                                     name:UIApplicationWillResignActiveNotification
-                                                   object:nil];
+        _paused = NO;
+        _muted = NO;
+        _started = NO;
 
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(applicationWillEnterForeground:)
-                                                     name:UIApplicationWillEnterForegroundNotification
-                                                   object:nil];
+        NSNotificationCenter *defaultCenter = [NSNotificationCenter defaultCenter];
 
+        [defaultCenter addObserver:self
+                          selector:@selector(applicationWillResignActive:)
+                              name:UIApplicationWillResignActiveNotification
+                            object:nil];
+
+        [defaultCenter addObserver:self
+                          selector:@selector(applicationDidEnterBackground:)
+                              name:UIApplicationDidEnterBackgroundNotification
+                            object:nil];
+
+        [defaultCenter addObserver:self
+                          selector:@selector(applicationWillEnterForeground:)
+                              name:UIApplicationWillEnterForegroundNotification
+                            object:nil];
+
+        [defaultCenter addObserver:self
+                          selector:@selector(mediaPlayerStateChanged:)
+                              name:VLCMediaPlayerStateChanged
+                            object:nil];
+
+        [defaultCenter addObserver:self
+                          selector:@selector(mediaPlayerTimeChanged:)
+                              name:VLCMediaPlayerTimeChanged
+                            object:nil];
     }
 
     return self;
@@ -45,8 +57,11 @@ static NSString *const playbackRate = @"rate";
 
 - (void)applicationWillResignActive:(NSNotification *)notification
 {
-    if (!_paused) {
-        [self setPaused:_paused];
+    if (_paused)
+        return;
+    if(_player) {
+        [_player pause];
+        [_player setRate:0.0];
     }
 }
 
@@ -57,36 +72,45 @@ static NSString *const playbackRate = @"rate";
 
 - (void)applyModifiers
 {
-    if(!_paused)
-        [self play];
+    if(_player) {
+        if (_muted) {
+            [_player.audio setVolume:0];
+            [_player.audio setMuted:YES];
+        } else {
+            [_player.audio setVolume:100];
+            [_player.audio setMuted:NO];
+        }
+    }
+    [self setPaused:_paused];
 }
 
 - (void)setPaused:(BOOL)paused
 {
-    if(_player){
-        if(!_started)
-            [self play];
-        else {
+    if(_player) {
+        if (paused) {
             [_player pause];
-            _paused = paused;
+            [_player setRate:0.0];
+        } else {
+            [_player play];
+            [_player setRate:1.0];
         }
     }
+    _paused = paused;
 }
 
--(void)play
+- (void)setMuted:(BOOL)muted
 {
-    if(_player) {
-        [_player play];
-        _paused = NO;
-        _started = YES;
-    }
+    _muted = muted;
+    [self applyModifiers];
 }
 
 -(void)setSrc:(NSDictionary *)source
 {
+    if(_player && _player.media)
+        [_player pause];
+
     if(!_player) {
         NSArray* options = [source objectForKey:@"options"];
-        //init player && play
         _player = [[VLCMediaPlayer alloc] initWithOptions:options];
 
 #if DEBUG
@@ -94,28 +118,24 @@ static NSString *const playbackRate = @"rate";
 #endif
 
         [_player setDrawable:self];
-        _player.delegate = self;
-
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mediaPlayerStateChanged:) name:VLCMediaPlayerStateChanged object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(mediaPlayerTimeChanged:) name:VLCMediaPlayerTimeChanged object:nil];
+        [_player setDelegate:self];
     }
 
     NSString* uri    = [source objectForKey:@"uri"];
-    if(uri) {
-        NSURL* _uri    = [NSURL URLWithString:uri];
-        _player.media = [VLCMedia mediaWithURL:_uri];
-        [self play];
-    }
-    else
-        [self _release];
+    NSURL* url    = [NSURL URLWithString:uri];
+    VLCMedia *media = [VLCMedia mediaWithURL:url];
+
+    [_player setMedia:media];
+
+    [self applyModifiers];
 }
 
-- (void)mediaPlayerTimeChanged:(NSNotification *)aNotification
+- (void)mediaPlayerTimeChanged:(NSNotification *)notification
 {
     [self updateVideoProgress];
 }
 
-- (void)mediaPlayerStateChanged:(NSNotification *)aNotification
+- (void)mediaPlayerStateChanged:(NSNotification *)notification
 {
     VLCMediaPlayerState state = _player.state;
     switch (state) {
@@ -139,7 +159,6 @@ static NSString *const playbackRate = @"rate";
         case VLCMediaPlayerStateError:
             if(self.onVideoError)
                 self.onVideoError(@{ @"target": self.reactTag });
-            [self _release];
             break;
         case VLCMediaPlayerStatePaused:
             if(self.onVideoPause)
@@ -193,8 +212,8 @@ static NSString *const playbackRate = @"rate";
 
 -(void)setSeek:(float)pos
 {
-    if([_player isSeekable]){
-        if(pos>=0 && pos <= 1){
+    if([_player isSeekable]) {
+        if(pos>=0 && pos <= 1) {
             [_player setPosition:pos];
         }
     }
@@ -208,22 +227,11 @@ static NSString *const playbackRate = @"rate";
 }
 */
 
--(void)setRate:(float)rate
-{
-    [_player setRate:rate];
-}
-
-- (void)_release
-{
-    [_player pause];
-    [_player stop];
-}
-
 #pragma mark - Lifecycle
-- (void)removeFromSuperview
+- (void) removeFromSuperview
 {
-    [self _release];
-    _player = nil;
+    [_player stop];
+    [_player setDelegate:nil];
     _eventDispatcher = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [super removeFromSuperview];
