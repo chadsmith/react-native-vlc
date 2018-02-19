@@ -32,11 +32,6 @@
                             object:nil];
 
         [defaultCenter addObserver:self
-                          selector:@selector(applicationDidEnterBackground:)
-                              name:UIApplicationDidEnterBackgroundNotification
-                            object:nil];
-
-        [defaultCenter addObserver:self
                           selector:@selector(applicationWillEnterForeground:)
                               name:UIApplicationWillEnterForegroundNotification
                             object:nil];
@@ -59,9 +54,8 @@
 {
     if (_paused)
         return;
-    if(_player) {
+    if(_player && _player.media) {
         [_player pause];
-        [_player setRate:0.0];
     }
 }
 
@@ -72,28 +66,22 @@
 
 - (void)applyModifiers
 {
-    if(_player) {
-        if (_muted) {
-            [_player.audio setVolume:0];
+    if(_player && _player.audio) {
+        if (_muted)
             [_player.audio setMuted:YES];
-        } else {
-            [_player.audio setVolume:100];
+        else
             [_player.audio setMuted:NO];
-        }
     }
     [self setPaused:_paused];
 }
 
 - (void)setPaused:(BOOL)paused
 {
-    if(_player) {
-        if (paused) {
+    if(_player.media) {
+        if (paused)
             [_player pause];
-            [_player setRate:0.0];
-        } else {
+        else
             [_player play];
-            [_player setRate:1.0];
-        }
     }
     _paused = paused;
 }
@@ -121,8 +109,8 @@
         [_player setDelegate:self];
     }
 
-    NSString* uri    = [source objectForKey:@"uri"];
-    NSURL* url    = [NSURL URLWithString:uri];
+    NSString* uri = [source objectForKey:@"uri"];
+    NSURL* url = [NSURL URLWithString:uri];
     VLCMedia *media = [VLCMedia mediaWithURL:url];
 
     [_player setMedia:media];
@@ -230,8 +218,11 @@
 #pragma mark - Lifecycle
 - (void) removeFromSuperview
 {
-    [_player stop];
-    [_player setDelegate:nil];
+    if(_player) {
+        if(_player.media)
+            [_player stop];
+        [_player setDelegate:nil];
+    }
     _eventDispatcher = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     [super removeFromSuperview];
