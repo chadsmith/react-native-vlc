@@ -19,10 +19,6 @@ export default class VLCPlayer extends Component {
     this._root.setNativeProps(nativeProps);
   }
 
-  seek = (time) => {
-    this.setNativeProps({ seek: time });
-  }
-
   // TODO - check possible android support
   /*
   snapshot = (path) => {
@@ -55,12 +51,6 @@ export default class VLCPlayer extends Component {
   _onProgress = (event) => {
     if (this.props.onProgress) {
       this.props.onProgress(event.nativeEvent);
-    }
-  };
-
-  _onSeek = (event) => {
-    if (this.props.onSeek) {
-      this.props.onSeek(event.nativeEvent);
     }
   };
 
@@ -108,7 +98,6 @@ export default class VLCPlayer extends Component {
       onVideoLoad: this._onLoad,
       onVideoError: this._onError,
       onVideoProgress: this._onProgress,
-      onVideoSeek: this._onSeek,
       onVideoPause: this._onPause,
       onVideoStop: this._onStop,
       onVideoEnd: this._onEnd,
@@ -127,13 +116,11 @@ export default class VLCPlayer extends Component {
 VLCPlayer.propTypes = {
   /* Native only */
   src: PropTypes.object,
-  seek: PropTypes.number,
   onVideoLoadStart: PropTypes.func,
   onVideoLoad: PropTypes.func,
   onVideoBuffer: PropTypes.func,
   onVideoError: PropTypes.func,
   onVideoProgress: PropTypes.func,
-  onVideoSeek: PropTypes.func,
   onVideoPause: PropTypes.func,
   onVideoStop: PropTypes.func,
   onVideoEnd: PropTypes.func,
@@ -155,7 +142,6 @@ VLCPlayer.propTypes = {
   onBuffer: PropTypes.func,
   onError: PropTypes.func,
   onProgress: PropTypes.func,
-  onSeek: PropTypes.func,
   onPause: PropTypes.func,
   onStop: PropTypes.func,
   onEnd: PropTypes.func,
@@ -172,6 +158,5 @@ VLCPlayer.propTypes = {
 const RCTVLCPlayer = requireNativeComponent('RCTVLCPlayer', VLCPlayer, {
   nativeOnly: {
     src: true,
-    seek: true,
   },
 });

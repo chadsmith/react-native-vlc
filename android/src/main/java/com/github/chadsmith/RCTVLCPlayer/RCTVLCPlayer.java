@@ -2,6 +2,7 @@ package com.github.chadsmith.RCTVLCPlayer;
 
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.facebook.react.bridge.Arguments;
@@ -20,9 +21,7 @@ import java.util.concurrent.Callable;
 
 import bolts.Task;
 
-// This originally extended ScalableVideoView, which extends TextureView
-// Now we extend SurfaceView (https://github.com/crosswalk-project/crosswalk-website/wiki/Android-SurfaceView-vs-TextureView)
-public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayoutListener, IVLCVout.Callback, MediaPlayer.EventListener, LifecycleEventListener {
+public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayoutListener, IVLCVout.Callback, MediaPlayer.EventListener, LifecycleEventListener, SurfaceHolder.Callback {
 
     public enum Events {
         EVENT_LOAD_START("onVideoLoadStart"),
@@ -30,7 +29,6 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         EVENT_STALLED("onVideoBuffer"),
         EVENT_ERROR("onVideoError"),
         EVENT_PROGRESS("onVideoProgress"),
-        EVENT_SEEK("onVideoSeek"),
         EVENT_PAUSE("onVideoPause"),
         EVENT_STOP("onVideoStop"),
         EVENT_END("onVideoEnd");
@@ -48,16 +46,8 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
     private static final double MIN_PROGRESS_INTERVAL = 0.1;
 
-    private static final int D_PAD_SEEK_TIME = 30000;
-    private static final int D_PAD_SEEK_REPEAT_COUNT = 14;
-    private static final int D_PAD_SEEK_MAX_MULTIPLIER = 5;
-
     public static final String EVENT_PROP_DURATION = "duration";
-    //public static final String EVENT_PROP_PLAYABLE_DURATION = "playableDuration";
     public static final String EVENT_PROP_CURRENT_TIME = "currentTime";
-    public static final String EVENT_PROP_SEEK_TIME = "seekTime";
-    public static final String EVENT_PROP_WIDTH = "width";
-    public static final String EVENT_PROP_HEIGHT = "height";
 
     public static final String EVENT_PROP_ERROR = "error";
     public static final String EVENT_PROP_WHAT = "what";
@@ -77,6 +67,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     private boolean mStalled = false;
     private double mPrevProgress = 0.0;
 
+    private SurfaceHolder mSurfaceHolder;
     private LibVLC libvlc;
     private MediaPlayer mMediaPlayer = null;
     private int mVideoWidth;
@@ -92,34 +83,23 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         mEventEmitter = themedReactContext.getJSModule(RCTEventEmitter.class);
         themedReactContext.addLifecycleEventListener(this);
         orientation = mThemedReactContext.getResources().getConfiguration().orientation;
-
-        createPlayer(null);
     }
 
     private void createPlayer(ArrayList<Object> options) {
         if (mMediaPlayer != null) return;
 
         try {
-            // Create LibVLC
             ArrayList<String> combinedOptions = new ArrayList<String>();
-            //combinedOptions.add("--subsdec-encoding <encoding>");
-            //combinedOptions.add("--aout=opensles");
-            //combinedOptions.add("--audio-time-stretch"); // time stretching
-            combinedOptions.add("-vvv"); // verbosity
-            combinedOptions.add("--http-reconnect");
-            //combinedOptions.add("--network-caching="+(8*1000));
+            combinedOptions.add("-vvvv");
             if(options != null) {
                 for(Object option : options)
                     combinedOptions.add(option.toString());
             }
             libvlc = new LibVLC(mThemedReactContext, combinedOptions);
-            this.getHolder().setKeepScreenOn(true);
 
-            // Create media player
             mMediaPlayer = new MediaPlayer(libvlc);
             mMediaPlayer.setEventListener(this);
 
-            // Set up video output
             final IVLCVout vout = mMediaPlayer.getVLCVout();
             vout.setVideoView(this);
             vout.addCallback(this);
@@ -135,11 +115,14 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
             @Override
             public Void call() throws Exception {
+                getHolder().setKeepScreenOn(false);
+                mMediaPlayer.setEventListener(null);
                 mMediaPlayer.stop();
                 final IVLCVout vout = mMediaPlayer.getVLCVout();
                 vout.removeCallback(RCTVLCPlayer.this);
                 vout.detachViews();
                 libvlc.release();
+                mMediaPlayer = null;
                 libvlc = null;
                 return null;
             }
@@ -183,6 +166,11 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     }
 
     public void setSrc(final String uriString, final ArrayList<Object> options) {
+        if(mMediaPlayer != null) {
+            mMediaPlayer.stop();
+            if(options != mSrcOptions)
+                releasePlayer();
+        }
 
         if(uriString == null)
             return;
@@ -190,16 +178,16 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         mSrcUriString = uriString;
         mSrcOptions = options;
 
+        if(mSurfaceHolder == null)
+            return;
+
         createPlayer(options);
 
         Media m = new Media(libvlc, Uri.parse(uriString));
+        m.setHWDecoderEnabled(true, false);
         mMediaPlayer.setMedia(m);
-        //mMediaPlayer.play(); // Maybe it's better to call that only through updateModifiers()
 
-        // We need this because on the Opening event, we do not get Duration
         mLoaded = false;
-
-        // Because the VLC buffering event and state is a bit wonky
         mStalled = false;
 
         WritableMap src = Arguments.createMap();
@@ -207,11 +195,13 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
         WritableMap event = Arguments.createMap();
         event.putMap(RCTVLCPlayerManager.PROP_SRC, src);
         mEventEmitter.receiveEvent(getId(), Events.EVENT_LOAD_START.toString(), event);
+
+        applyModifiers();
     }
 
     public void setPausedModifier(final boolean paused) {
         mPaused = paused;
-
+        if (mMediaPlayer == null) return;
         if (mPaused) {
             mMediaPlayer.pause();
         } else {
@@ -221,7 +211,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
     public void setMutedModifier(final boolean muted) {
         mMuted = muted;
-
+        if (mMediaPlayer == null) return;
         if (mMuted) {
             mMediaPlayer.setVolume(0);
         } else {
@@ -231,20 +221,14 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
     public void setVolumeModifier(final float volume) {
         mVolume = volume;
+        if (mMediaPlayer == null) return;
         mMediaPlayer.setVolume((int) volume * 200);
     }
 
     public void applyModifiers() {
         setPausedModifier(mPaused);
         setMutedModifier(mMuted);
-    }
-
-    public void seekTo(int msec) {
-        WritableMap event = Arguments.createMap();
-        event.putDouble(EVENT_PROP_CURRENT_TIME, mMediaPlayer.getTime() / 1000.0);
-        event.putDouble(EVENT_PROP_SEEK_TIME, msec / 1000.0);
-        mEventEmitter.receiveEvent(getId(), Events.EVENT_SEEK.toString(), event);
-        mMediaPlayer.setTime(msec);
+        setVolumeModifier(mVolume);
     }
 
     @Override
@@ -253,8 +237,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
 
         switch(ev.type) {
             case MediaPlayer.Event.EndReached:
-                mEventEmitter.receiveEvent(getId(), Events.EVENT_END.toString(), null);
-                releasePlayer();
+                mEventEmitter.receiveEvent(getId(), Events.EVENT_END.toString(), event);
                 break;
             case MediaPlayer.Event.EncounteredError:
                 WritableMap error = Arguments.createMap();
@@ -273,7 +256,7 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
                 }
                 break;
             case MediaPlayer.Event.Playing:
-                if (! mLoaded) {
+                if (!mLoaded) {
                     event.putDouble(EVENT_PROP_DURATION, mMediaPlayer.getLength() / 1000.0);
                     event.putDouble(EVENT_PROP_CURRENT_TIME, mMediaPlayer.getTime() / 1000.0);
                     mEventEmitter.receiveEvent(getId(), Events.EVENT_LOAD.toString(), event);
@@ -287,11 +270,8 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
                 break;
             case MediaPlayer.Event.Stopped:
                 mEventEmitter.receiveEvent(getId(), Events.EVENT_STOP.toString(), event);
-                this.getHolder().setKeepScreenOn(false);
                 break;
             case MediaPlayer.Event.Opening:
-                // We may want to move that to first Playing?
-                applyModifiers();
                 break;
             case MediaPlayer.Event.TimeChanged:
                 double currentProgress = mMediaPlayer.getTime() / 1000.0;
@@ -300,8 +280,6 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
                     event.putDouble(EVENT_PROP_CURRENT_TIME, currentProgress);
                     mEventEmitter.receiveEvent(getId(), Events.EVENT_PROGRESS.toString(), event);
                 }
-
-                // 3 is Playing, can't find the enum for some reason
                 if (mMediaPlayer.getPlayerState() == 3 && mStalled) {
                     mStalled = false;
                 }
@@ -320,27 +298,37 @@ public class RCTVLCPlayer extends SurfaceView implements IVLCVout.OnNewVideoLayo
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        mSurfaceHolder = getHolder();
+        mSurfaceHolder.addCallback(this);
         setSrc(mSrcUriString, mSrcOptions);
     }
 
     @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int format, int width, int height) {
+        if(mMediaPlayer != null) {
+            final IVLCVout vout = mMediaPlayer.getVLCVout();
+            vout.setWindowSize(width, height);
+        }
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+    }
+
+    @Override
     public void onHostPause() {
-        if (mMediaPlayer != null) {
+        if(mMediaPlayer != null) {
             mMediaPlayer.pause();
         }
     }
 
     @Override
     public void onHostResume() {
-        if (mMediaPlayer != null) {
-            IVLCVout vout = mMediaPlayer.getVLCVout();
-            if (vout != null) {
-                if (!vout.areViewsAttached()) {
-                    vout.setVideoView(this);
-                    vout.attachViews();
-                }
-            }
-        }
+        applyModifiers();
     }
 
     @Override

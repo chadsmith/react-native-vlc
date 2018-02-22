@@ -17,12 +17,9 @@ public class RCTVLCPlayerManager extends SimpleViewManager<RCTVLCPlayer> {
     public static final String PROP_SRC = "src";
     public static final String PROP_SRC_OPTIONS = "options";
     public static final String PROP_SRC_URI = "uri";
-    public static final String PROP_SRC_IS_NETWORK = "isNetwork";
-    public static final String PROP_SRC_IS_ASSET = "isAsset";
     public static final String PROP_MUTED = "muted";
     public static final String PROP_PAUSED = "paused";
     public static final String PROP_VOLUME = "volume";
-    public static final String PROP_SEEK = "seek";
 
     @Override
     public String getName() {
@@ -62,11 +59,6 @@ public class RCTVLCPlayerManager extends SimpleViewManager<RCTVLCPlayer> {
     @ReactProp(name = PROP_VOLUME, defaultFloat = 1.0f)
     public void setVolume(final RCTVLCPlayer videoView, final float volume) {
         videoView.setVolumeModifier(volume);
-    }
-
-    @ReactProp(name = PROP_SEEK)
-    public void setSeek(final RCTVLCPlayer videoView, final float seek) {
-        videoView.seekTo(Math.round(seek * 1000.0f));
     }
 
 }
